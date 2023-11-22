@@ -7,7 +7,7 @@ use std::fs::OpenOptions;
 
 
 
-#[derive(Debug,Clone)]
+#[derive(Debug,Clone,Copy)]
 pub struct Vec3 {
     e: [f64; 3], 
 }
@@ -67,7 +67,7 @@ impl std::ops::Neg for Vec3 {
     }
 }
 
-
+//Operand overide 
 
 // add two Vec3
 impl std::ops::Add for Vec3 {
@@ -84,28 +84,38 @@ impl std::ops::Add for Vec3 {
     }
 }
 //multiply
-impl std::ops::Mul for Vec3 {
+impl std::ops::Mul<f64> for Vec3 {
     type Output = Self;
 
-    fn mul(self, other: Self) -> Self::Output {
-        let x = self.x() * other.x();
-        let y = self.y() * other.y();
-        let z = self.z() * other.z();
+    fn mul(self, t: f64) -> Self::Output {
+        let x = self.x() * t;
+        let y = self.y() * t;
+        let z = self.z() * t;
 
         Self {
              e: [x,y,z],
         }
+    }
+}
+
+impl std::ops::MulAssign<f64> for Vec3 {
+    
+    fn mul_assign(&mut self, rhs: f64) {
+        self.e[0] =  self.e[0] * rhs;
+        self.e[1] =  self.e[1] * rhs;
+        self.e[2] =  self.e[2] * rhs;
     }
 }
 
 //divide
-impl std::ops::Div for Vec3 {
+impl std::ops::Div<f64> for Vec3 {
     type Output = Self;
 
-    fn div(self, other: Self) -> Self::Output {
-        let x = self.x() / other.x();
-        let y = self.y() / other.y();
-        let z = self.z() / other.z();
+    fn div(self, rhs: f64) -> Self::Output {
+        let d = 1.0 / rhs;
+        let x = self.x() * d;
+        let y = self.y() * d;
+        let z = self.z() * d;
 
         Self {
              e: [x,y,z],
@@ -113,8 +123,96 @@ impl std::ops::Div for Vec3 {
     }
 }
 
-//utlity functions 
+impl std::ops::DivAssign<f64> for Vec3 {
+    
+    fn div_assign(&mut self, rhs: f64) {
+        let d = 1.0 / rhs;
+        self.e[0] =  self.e[0] * d;
+        self.e[1] =  self.e[1] * d;
+        self.e[2] =  self.e[2] * d;
+    }
+}
 
+
+//functions 
+pub fn  dot(u:&Vec3, v:&Vec3) -> f64 {
+    u.e[0] * v.e[0] + u.e[1] * v.e[1] + u.e[2] * v.e[2]
+}
+
+pub fn  cross(u:&Vec3, v:&Vec3) -> Vec3 {
+    Vec3{
+        e: [(u.e[1] * v.e[2] - u.e[2] * v.e[1]),
+            (u.e[2] * v.e[0] - u.e[0] * v.e[2]),
+            (u.e[0] * v.e[1] - u.e[1] * v.e[0]),]
+        }
+}
+
+pub fn unit_vector(v: &Vec3) -> Vec3 {
+    let len = v.length();
+    *v / len 
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn round_two_digits(x: f64) -> f64 {
+        (x * 100.0).round() / 100.0
+    }
+
+    #[test]
+    fn test_mul_assign() {
+        let mut v1 = Vec3::new(1.0,2.0,3.0);
+        v1 *= 2.0;
+        assert_eq!(round_two_digits(v1.x()), 2.0);
+        assert_eq!(round_two_digits(v1.y()), 4.0);
+        assert_eq!(round_two_digits(v1.z()), 6.0);
+
+    }
+
+    #[test]
+    fn test_div() {
+        let v1 = Vec3::new(4.0,8.0,12.0);
+        let d = v1 / 2.0;
+        assert_eq!(round_two_digits(d.x()), 2.00);
+        assert_eq!(round_two_digits(d.y()), 4.00);
+        assert_eq!(round_two_digits(d.z()), 6.00);
+    }
+
+    #[test]
+    fn test_length() {
+        let v1 = Vec3::new(2.0,3.0,4.0);
+        assert_eq!(round_two_digits(v1.length()), 5.39);
+    }
+
+    #[test]
+    fn test_dot() {
+        let v1 = Vec3::new(1.0,1.0,1.0);
+        let v2 = Vec3::new(1.0,2.0,3.0);
+        assert_eq!(round_two_digits(dot(&v1,&v2)), 6.00);
+    }
+
+    #[test]
+    fn test_cross() {
+        let v1 = Vec3::new(1.0,5.0,2.0);
+        let v2 = Vec3::new(2.0,10.0,4.0);
+        let c = cross(&v1,&v2);
+        assert_eq!(round_two_digits(c.x()), 0.00);
+        assert_eq!(round_two_digits(c.y()), 0.00);
+        assert_eq!(round_two_digits(c.z()), 0.00);
+    }
+
+    #[test]
+    fn test_unit() {
+        let v1 = Vec3::new(1.0,1.0,1.0);
+        assert_eq!(round_two_digits(v1.length()), 1.73);
+        let u = unit_vector(&v1);   
+        assert_eq!(round_two_digits(u.x()), 0.58);
+        assert_eq!(round_two_digits(u.y()), 0.58);
+        assert_eq!(round_two_digits(u.z()), 0.58);
+
+    }
+}
 
 
 fn main() {
